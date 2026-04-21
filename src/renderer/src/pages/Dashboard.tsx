@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { GitBranch, Server, ScrollText, Lock, KeyRound, SlidersHorizontal } from 'lucide-react'
+import { GitBranch, Server, ScrollText, Lock, KeyRound } from 'lucide-react'
 
 const actions = [
   {
