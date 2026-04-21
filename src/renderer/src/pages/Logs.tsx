@@ -5,11 +5,12 @@ import { LogEvent } from '../types/electron-api'
 import { getCache, setCache, clearCache, TTL_10M } from '../cache'
 
 const TIME_RANGES: Record<string, number> = {
-  '15m':  15 * 60 * 1000,
+  '5m':   5  * 60 * 1000,
   '30m':  30 * 60 * 1000,
   '1h':   60 * 60 * 1000,
-  '3h': 3 * 60 * 60 * 1000,
-  '24h': 24 * 60 * 60 * 1000,
+  '3h':   3  * 60 * 60 * 1000,
+  '12h':  12 * 60 * 60 * 1000,
+  '24h':  24 * 60 * 60 * 1000,
 }
 
 const GROUPS_KEY = 'logs:groups'
@@ -124,85 +125,106 @@ export function Logs() {
   }, [isTailing, selectedGroup, filterPattern, stopTail])
 
   return (
-    <div className="flex flex-col h-full p-8">
-      <div className="flex items-center gap-2 mb-6">
-        <ScrollText size={22} className="text-orange-400" />
-        <h2 className="text-2xl font-bold">CloudWatch Logs</h2>
+    <div className="flex flex-col h-full p-6">
+
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <ScrollText size={20} className="text-orange-400" />
+        <h2 className="text-xl font-bold">CloudWatch Logs</h2>
       </div>
 
-      {/* Row 1 — log group selector */}
-      <div className="flex items-center gap-2 mb-2">
-        <label className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Log Group</label>
-        <SearchableSelect
-          value={selectedGroup}
-          onChange={handleGroupChange}
-          options={logGroups}
-          placeholder={logGroups.length === 0 ? 'Loading groups…' : 'Select log group…'}
-          disabled={groupsRefreshing && logGroups.length === 0}
-          className="flex-1"
-        />
-        <button
-          onClick={() => { clearCache(GROUPS_KEY); refreshGroups() }}
-          disabled={groupsRefreshing}
-          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40 transition-colors"
-          title="Reload log groups"
-        >
-          <RefreshCw size={13} className={groupsRefreshing ? 'animate-spin' : ''} />
-        </button>
-      </div>
+      {/* Query definition panel */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mb-3">
 
-      {/* Row 2 — search controls */}
-      <div className="flex gap-2 mb-4 items-center">
-        {/* Time range */}
-        <select
-          value={timeRange}
-          onChange={e => setTimeRange(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-        >
-          {Object.keys(TIME_RANGES).map(r => (
-            <option key={r} value={r}>Last {r}</option>
-          ))}
-        </select>
-
-        {/* Filter pattern */}
-        <input
-          value={filterPattern}
-          onChange={e => setFilterPattern(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          placeholder="Filter pattern (e.g. ERROR)"
-          className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
-
-        {/* Search */}
-        <button
-          onClick={handleSearch}
-          disabled={loading || !selectedGroup || groupsRefreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          Search
-        </button>
-
-        {/* Tail toggle */}
-        <button
-          onClick={handleTailToggle}
-          disabled={!selectedGroup || groupsRefreshing}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-            isTailing ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'
-          }`}
-        >
-          {isTailing ? <><Square size={13} /> Stop</> : <><Play size={13} /> Tail</>}
-        </button>
-
-        {/* Clear */}
-        {events.length > 0 && (
+        {/* Log group row */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0 w-20">Log Group</span>
+          <SearchableSelect
+            value={selectedGroup}
+            onChange={handleGroupChange}
+            options={logGroups}
+            placeholder={logGroups.length === 0 ? 'Loading groups…' : 'Select log group…'}
+            disabled={groupsRefreshing && logGroups.length === 0}
+            className="flex-1"
+          />
           <button
-            onClick={() => setEvents([])}
-            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            onClick={() => { clearCache(GROUPS_KEY); refreshGroups() }}
+            disabled={groupsRefreshing}
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40 transition-colors"
+            title="Reload log groups"
           >
-            Clear
+            <RefreshCw size={13} className={groupsRefreshing ? 'animate-spin' : ''} />
           </button>
-        )}
+        </div>
+
+        {/* Time range pills */}
+        <div className="flex items-center gap-1.5 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0 w-20">Time range</span>
+          <div className="flex gap-1">
+            {Object.keys(TIME_RANGES).map(r => (
+              <button
+                key={r}
+                onClick={() => setTimeRange(r)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                  timeRange === r
+                    ? 'bg-orange-500 border-orange-500 text-white'
+                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-orange-400 hover:text-orange-500'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Filter / query textarea */}
+        <div className="px-4 pt-3 pb-2">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Filter pattern</span>
+            <span className="text-[10px] text-gray-400 font-mono">e.g. ERROR, [level=ERROR], "timeout"</span>
+          </div>
+          <textarea
+            value={filterPattern}
+            onChange={e => setFilterPattern(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSearch() }}
+            placeholder={'ERROR\n[level=ERROR]\n"connection timeout"'}
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 resize-y placeholder-gray-300 dark:placeholder-gray-600"
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 px-4 pb-3">
+          <button
+            onClick={handleSearch}
+            disabled={loading || !selectedGroup || groupsRefreshing}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            {loading ? 'Running…' : 'Run query'}
+          </button>
+
+          <button
+            onClick={handleTailToggle}
+            disabled={!selectedGroup || groupsRefreshing}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+              isTailing ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
+          >
+            {isTailing ? <><Square size={13} /> Stop tailing</> : <><Play size={13} /> Start tailing</>}
+          </button>
+
+          {events.length > 0 && (
+            <button
+              onClick={() => setEvents([])}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+
+          <span className="ml-auto text-xs text-gray-400 font-mono">⌘↵ to run</span>
+        </div>
       </div>
 
       {/* Streaming indicator */}
@@ -215,7 +237,7 @@ export function Logs() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950 p-4 text-red-700 dark:text-red-300 text-xs font-mono">
+        <div className="mb-3 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950 p-4 text-red-700 dark:text-red-300 text-xs font-mono">
           {error}
         </div>
       )}
@@ -227,7 +249,7 @@ export function Logs() {
       >
         {events.length === 0 && !loading && (
           <span className="text-gray-600">
-            {selectedGroup ? 'Click Search or Tail to load logs.' : 'Select a log group above.'}
+            {selectedGroup ? 'Click Run query or Start tailing to load logs.' : 'Select a log group above.'}
           </span>
         )}
         {events.map((e, i) => (
