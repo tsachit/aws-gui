@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Terminal, RefreshCw, ChevronDown } from 'lucide-react'
+import { Terminal, RefreshCw } from 'lucide-react'
+import { SearchableSelect } from '../components/SearchableSelect'
 import { EcsInstance, TerminalApp } from '../types/electron-api'
 import {
   getCachedInstances,
@@ -164,17 +165,13 @@ export function Instances() {
               <RefreshCw size={10} className={clustersRefreshing ? 'animate-spin' : ''} />
             </button>
           </div>
-          <div className="relative">
-            <select
-              value={selectedCluster}
-              onChange={e => handleClusterChange(e.target.value)}
-              className="appearance-none min-w-52 px-3 py-2 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {clusters.length === 0 && <option value="">No clusters found</option>}
-              {clusters.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
+          <SearchableSelect
+            value={selectedCluster}
+            onChange={handleClusterChange}
+            options={clusters}
+            placeholder={clusters.length === 0 ? 'No clusters found' : 'Select cluster…'}
+            className="min-w-52"
+          />
         </div>
 
         {/* Service dropdown */}
@@ -190,18 +187,15 @@ export function Instances() {
               <RefreshCw size={10} className={servicesRefreshing ? 'animate-spin' : ''} />
             </button>
           </div>
-          <div className="relative">
-            <select
-              value={selectedService}
-              onChange={e => handleServiceChange(e.target.value)}
-              disabled={!selectedCluster}
-              className="appearance-none min-w-48 px-3 py-2 pr-8 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              <option value={ALL_SERVICES}>All services</option>
-              {services.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
+          <SearchableSelect
+            value={selectedService}
+            onChange={handleServiceChange}
+            options={[ALL_SERVICES, ...services]}
+            labels={{ [ALL_SERVICES]: 'All services' }}
+            placeholder="Select service…"
+            disabled={!selectedCluster}
+            className="min-w-48"
+          />
         </div>
 
         {/* Fetch button */}

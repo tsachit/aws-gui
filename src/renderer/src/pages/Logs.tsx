@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ScrollText, RefreshCw, Play, Square } from 'lucide-react'
+import { SearchableSelect } from '../components/SearchableSelect'
 import { LogEvent } from '../types/electron-api'
 import { getCache, setCache, clearCache, TTL_10M } from '../cache'
 
@@ -129,28 +130,29 @@ export function Logs() {
         <h2 className="text-2xl font-bold">CloudWatch Logs</h2>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-2 mb-4 items-center">
-        {/* Log group dropdown with reload */}
-        <div className="flex items-center gap-1 flex-1 min-w-48">
-          <select
-            value={selectedGroup}
-            onChange={e => handleGroupChange(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            {logGroups.length === 0 && <option value="">Loading groups…</option>}
-            {logGroups.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <button
-            onClick={() => { clearCache(GROUPS_KEY); refreshGroups() }}
-            disabled={groupsRefreshing}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40 transition-colors"
-            title="Reload log groups"
-          >
-            <RefreshCw size={13} className={groupsRefreshing ? 'animate-spin' : ''} />
-          </button>
-        </div>
+      {/* Row 1 — log group selector */}
+      <div className="flex items-center gap-2 mb-2">
+        <label className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Log Group</label>
+        <SearchableSelect
+          value={selectedGroup}
+          onChange={handleGroupChange}
+          options={logGroups}
+          placeholder={logGroups.length === 0 ? 'Loading groups…' : 'Select log group…'}
+          disabled={groupsRefreshing && logGroups.length === 0}
+          className="flex-1"
+        />
+        <button
+          onClick={() => { clearCache(GROUPS_KEY); refreshGroups() }}
+          disabled={groupsRefreshing}
+          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40 transition-colors"
+          title="Reload log groups"
+        >
+          <RefreshCw size={13} className={groupsRefreshing ? 'animate-spin' : ''} />
+        </button>
+      </div>
 
+      {/* Row 2 — search controls */}
+      <div className="flex gap-2 mb-4 items-center">
         {/* Time range */}
         <select
           value={timeRange}
@@ -168,7 +170,7 @@ export function Logs() {
           onChange={e => setFilterPattern(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           placeholder="Filter pattern (e.g. ERROR)"
-          className="flex-1 min-w-36 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
 
         {/* Search */}
