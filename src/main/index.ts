@@ -3,6 +3,9 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc-handlers'
 
+// Must be set before app is ready for Cmd+Tab / dock name to reflect correctly
+app.setName('AWS GUI')
+
 function createWindow(): void {
   const icon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
 
@@ -37,7 +40,6 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  app.setName('AWS GUI')
   electronApp.setAppUserModelId('com.aws-gui')
 
   if (process.platform === 'darwin') {
