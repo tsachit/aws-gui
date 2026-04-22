@@ -41,7 +41,7 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.aws-gui')
 
   if (process.platform === 'darwin') {
-    app.dock.setIcon(nativeImage.createFromPath(join(__dirname, '../../resources/icon.png')))
+    app.dock?.setIcon(nativeImage.createFromPath(join(__dirname, '../../resources/icon.png')))
   }
 
   app.on('browser-window-created', (_, window) => {
