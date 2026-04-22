@@ -37,6 +37,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  app.setName('AWS GUI')
   electronApp.setAppUserModelId('com.aws-gui')
 
   if (process.platform === 'darwin') {
