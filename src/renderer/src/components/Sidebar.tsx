@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, GitBranch, Server, ScrollText, Lock, KeyRound, Sun, Moon } from 'lucide-react'
+import logo from '../assets/logo.png'
 
 interface SidebarProps {
   theme: 'light' | 'dark'
@@ -19,7 +20,10 @@ export function Sidebar({ theme, onToggleTheme }: SidebarProps) {
   return (
     <aside className="flex flex-col w-56 min-h-screen bg-gray-900 dark:bg-gray-950 text-white border-r border-gray-700 dark:border-gray-800 shrink-0">
       <div className="px-4 py-5 border-b border-gray-700 dark:border-gray-800">
-        <h1 className="text-lg font-bold tracking-wide text-orange-400">⚡ AWS GUI</h1>
+        <div className="flex items-center gap-2">
+          <img src={logo} alt="AWS GUI" className="w-7 h-7 rounded-md" />
+          <h1 className="text-lg font-bold tracking-wide text-white">AWS GUI</h1>
+        </div>
       </div>
       <nav className="flex-1 py-4 space-y-1 px-2">
         {nav.map(({ to, label, icon: Icon }) => (
