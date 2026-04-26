@@ -285,7 +285,6 @@ export function Pipeline() {
                     <thead className="bg-gray-50 dark:bg-gray-800 text-left">
                       <tr>
                         <th className="px-4 py-3 font-semibold">Stage</th>
-                        <th className="px-4 py-3 font-semibold">Status</th>
                         <th className="px-4 py-3 font-semibold">Commit</th>
                         <th className="px-4 py-3 font-semibold">Actions</th>
                       </tr>
@@ -299,9 +298,6 @@ export function Pipeline() {
                           return (
                           <tr key={stage.stageName} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{stage.stageName}</td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <StatusBadge status={stage.latestExecution?.status ?? 'Unknown'} />
-                            </td>
                             <td className="px-4 py-3 font-mono text-xs text-blue-500 dark:text-blue-400 whitespace-nowrap">
                               {revision ? revision.slice(0, 7) : <span className="text-gray-300 dark:text-gray-600">—</span>}
                             </td>
