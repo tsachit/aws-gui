@@ -19,7 +19,8 @@ interface ApprovalAction extends PipelineStageAction {
 function findPendingApproval(state: PipelineState): ApprovalAction | null {
   for (const stage of state.stages) {
     for (const action of stage.actionStates) {
-      if (action.status === 'InProgress' && action.token) {
+      // token presence is the definitive signal — only set when approval is waiting
+      if (action.token) {
         return { ...action, stageName: stage.stageName }
       }
     }
