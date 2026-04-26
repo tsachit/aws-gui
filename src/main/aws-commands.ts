@@ -65,6 +65,7 @@ export function getPipelineState(pipelineName: string): PipelineState {
         lastUpdatedBy: (a.latestExecution as Record<string, unknown> | undefined)?.lastUpdatedBy as string,
         token: (a.latestExecution as Record<string, unknown> | undefined)?.token as string,
         summary: (a.latestExecution as Record<string, unknown> | undefined)?.summary as string,
+        revisionId: (a.currentRevision as Record<string, unknown> | undefined)?.revisionId as string,
         stageName: s.stageName as string,
       })),
     })),

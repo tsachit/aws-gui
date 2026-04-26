@@ -49,7 +49,8 @@ export interface PipelineStageAction {
   lastUpdatedBy?: string
   token?: string
   stageName?: string
-  summary?: string    // commit hash / revision summary for Source actions
+  summary?: string      // execution summary
+  revisionId?: string   // commit SHA / revision ID from currentRevision
 }
 
 export interface PipelineStage {

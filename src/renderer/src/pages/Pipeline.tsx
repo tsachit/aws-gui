@@ -282,36 +282,39 @@ export function Pipeline() {
                       <tr>
                         <th className="px-4 py-3 font-semibold">Stage</th>
                         <th className="px-4 py-3 font-semibold">Status</th>
+                        <th className="px-4 py-3 font-semibold">Commit</th>
                         <th className="px-4 py-3 font-semibold">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {pipelineState.stages.map(stage => (
-                        <tr key={stage.stageName} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{stage.stageName}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <StatusBadge status={stage.latestExecution?.status ?? 'Unknown'} />
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-x-4 gap-y-1">
-                              {stage.actionStates.map(a => (
-                                <span key={a.actionName} className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="font-medium">{a.actionName}:</span>
-                                  <StatusBadge status={a.status} />
-                                  {a.summary && (
-                                    <span className="font-mono text-gray-400 text-[10px]">
-                                      {a.summary.slice(0, 7)}
-                                    </span>
-                                  )}
-                                  {a.token && (
-                                    <span className="text-yellow-500 text-[10px] font-bold">NEEDS APPROVAL</span>
-                                  )}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {pipelineState.stages.map(stage => {
+                        // Use revisionId from any action that has one
+                        const revision = stage.actionStates.find(a => a.revisionId)?.revisionId
+                        return (
+                          <tr key={stage.stageName} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{stage.stageName}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <StatusBadge status={stage.latestExecution?.status ?? 'Unknown'} />
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs text-blue-500 dark:text-blue-400 whitespace-nowrap">
+                              {revision ? revision.slice(0, 7) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                {stage.actionStates.map(a => (
+                                  <span key={a.actionName} className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium">{a.actionName}:</span>
+                                    <StatusBadge status={a.status} />
+                                    {a.token && (
+                                      <span className="text-yellow-500 text-[10px] font-bold">NEEDS APPROVAL</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
