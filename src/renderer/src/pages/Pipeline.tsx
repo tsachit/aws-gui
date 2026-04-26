@@ -289,12 +289,14 @@ export function Pipeline() {
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                       {(() => {
-                        // Build executionId → commit hash from source actions (only they have revisionId)
+                        // Build executionId → git commit hash using the Source stage's summary
+                        // (revisionId from currentRevision is an AWS internal ID, not the git SHA)
                         const execToCommit: Record<string, string> = {}
-                        for (const s of pipelineState.stages) {
-                          const execId = s.latestExecution?.pipelineExecutionId
-                          const rev = s.actionStates.find(a => a.revisionId)?.revisionId
-                          if (execId && rev) execToCommit[execId] = rev
+                        const sourceStage = pipelineState.stages.find(s => s.stageName.toLowerCase() === 'source')
+                        if (sourceStage) {
+                          const execId = sourceStage.latestExecution?.pipelineExecutionId
+                          const commit = sourceCommit(pipelineState)
+                          if (execId && commit) execToCommit[execId] = commit
                         }
                         return pipelineState.stages.map(stage => {
                           // Resolve commit via this stage's executionId
