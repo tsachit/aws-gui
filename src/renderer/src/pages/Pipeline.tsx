@@ -69,6 +69,8 @@ export function Pipeline() {
   const [approving, setApproving] = useState(false)
   const [approvalResult, setApprovalResult] = useState<string | null>(null)
   const [approvalDone, setApprovalDone] = useState(false)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
+  const [secondsAgo, setSecondsAgo] = useState(0)
 
   const loadPipelines = useCallback(async () => {
     setFetching(true)
@@ -104,6 +106,8 @@ export function Pipeline() {
       const result = await window.electronAPI.getPipelineState(name)
       setCache(stateKey(name), result)
       setPipelineState(result)
+      setLastRefreshed(new Date())
+      setSecondsAgo(0)
     } catch (err: unknown) {
       setStateError(String(err instanceof Error ? err.message : err))
     } finally {
@@ -117,9 +121,28 @@ export function Pipeline() {
   useEffect(() => {
     if (selectedName) {
       setSelectedPipelineName(selectedName)
-      loadState(selectedName)   // shows cache instantly; background-fetches if stale
+      setLastRefreshed(null)
+      loadState(selectedName)
     }
   }, [selectedName, loadState])
+
+  // Auto-refresh selected pipeline state every 30s
+  useEffect(() => {
+    if (!selectedName) return
+    const interval = setInterval(() => {
+      loadState(selectedName, true)
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [selectedName, loadState])
+
+  // Tick "last updated Xs ago" every second
+  useEffect(() => {
+    if (!lastRefreshed) return
+    const ticker = setInterval(() => {
+      setSecondsAgo(Math.floor((Date.now() - lastRefreshed.getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(ticker)
+  }, [lastRefreshed])
 
   const handleApproval = useCallback(async (approved: boolean) => {
     if (!pipelineState) return
@@ -222,14 +245,21 @@ export function Pipeline() {
                   </p>
                 )}
               </div>
-              <button
-                onClick={() => loadState(selectedName, true)}
-                disabled={stateLoading}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw size={13} className={stateLoading ? 'animate-spin' : ''} />
-                Refresh
-              </button>
+              <div className="flex items-center gap-3">
+                {lastRefreshed && (
+                  <span className="text-xs text-gray-400 font-mono">
+                    {stateLoading ? 'Refreshing…' : `Updated ${secondsAgo}s ago`}
+                  </span>
+                )}
+                <button
+                  onClick={() => loadState(selectedName, true)}
+                  disabled={stateLoading}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                >
+                  <RefreshCw size={13} className={stateLoading ? 'animate-spin' : ''} />
+                  Refresh
+                </button>
+              </div>
             </div>
 
             {stateError && (
