@@ -288,10 +288,19 @@ export function Pipeline() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {pipelineState.stages.map(stage => {
-                        // Use revisionId from any action that has one
-                        const revision = stage.actionStates.find(a => a.revisionId)?.revisionId
-                        return (
+                      {(() => {
+                        // Build executionId → commit hash from source actions (only they have revisionId)
+                        const execToCommit: Record<string, string> = {}
+                        for (const s of pipelineState.stages) {
+                          const execId = s.latestExecution?.pipelineExecutionId
+                          const rev = s.actionStates.find(a => a.revisionId)?.revisionId
+                          if (execId && rev) execToCommit[execId] = rev
+                        }
+                        return pipelineState.stages.map(stage => {
+                          // Resolve commit via this stage's executionId
+                          const execId = stage.latestExecution?.pipelineExecutionId
+                          const revision = execId ? execToCommit[execId] : undefined
+                          return (
                           <tr key={stage.stageName} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{stage.stageName}</td>
                             <td className="px-4 py-3 whitespace-nowrap">
@@ -314,8 +323,8 @@ export function Pipeline() {
                               </div>
                             </td>
                           </tr>
-                        )
-                      })}
+                        )})
+                      })()}
                     </tbody>
                   </table>
                 </div>
