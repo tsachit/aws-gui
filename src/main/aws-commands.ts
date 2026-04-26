@@ -82,8 +82,11 @@ export function getPipelineState(pipelineName: string): PipelineState {
       )
       const execData = JSON.parse(execRaw)
       const revisions = execData.pipelineExecution?.artifactRevisions as Record<string, unknown>[] | undefined
-      const sha = revisions?.[0]?.revisionId as string | undefined
-      if (sha) executionCommits[execId] = sha.slice(0, 7)
+      // revisionId is an AWS internal ID (e.g. S3 version); revisionSummary contains the git SHA
+      const summary = revisions?.[0]?.revisionSummary as string | undefined
+      const match = summary?.match(/([a-f0-9]{7,40})/i)
+      const commit = match ? match[1].slice(0, 7) : undefined
+      if (commit) executionCommits[execId] = commit
     } catch {
       // execution may have expired — skip
     }
