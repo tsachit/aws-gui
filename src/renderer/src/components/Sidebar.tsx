@@ -9,7 +9,7 @@ interface SidebarProps {
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/pipeline', label: 'Pipeline', icon: GitBranch },
+  { to: '/pipeline', label: 'CodePipeline', icon: GitBranch },
   { to: '/instances', label: 'Instances', icon: Server },
   { to: '/logs', label: 'Logs', icon: ScrollText },
   { to: '/secrets', label: 'Secrets', icon: Lock },

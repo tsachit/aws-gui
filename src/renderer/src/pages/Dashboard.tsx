@@ -3,7 +3,7 @@ import { GitBranch, Server, ScrollText, Lock, KeyRound } from 'lucide-react'
 
 const actions = [
   {
-    label: 'Pipeline Status',
+    label: 'CodePipeline',
     description: 'View all CodePipeline stages, approve or reject deployments',
     icon: GitBranch,
     to: '/pipeline',
