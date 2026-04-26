@@ -8,7 +8,7 @@ import {
   getSelectedPipelineName,
   setSelectedPipelineName,
 } from '../pipelineStore'
-import { getCache, setCache, TTL_2M } from '../cache'
+import { getCache, setCache, clearCacheByPrefix, TTL_2M } from '../cache'
 
 const stateKey = (name: string) => `pipeline:state:${name}`
 
@@ -116,8 +116,11 @@ export function Pipeline() {
     }
   }, [])
 
-  // On mount: show cache immediately, fetch fresh in background
-  useEffect(() => { loadPipelines() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // On mount: evict stale pipeline state caches (schema may have changed), then load
+  useEffect(() => {
+    clearCacheByPrefix('pipeline:state:')
+    loadPipelines()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedName) {
@@ -292,7 +295,7 @@ export function Pipeline() {
                         return pipelineState.stages.map(stage => {
                           // Resolve commit via executionId → git SHA map built in main process
                           const execId = stage.latestExecution?.pipelineExecutionId
-                          const revision = execId ? pipelineState.executionCommits[execId] : undefined
+                          const revision = execId ? pipelineState.executionCommits?.[execId] : undefined
                           return (
                           <tr key={stage.stageName} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{stage.stageName}</td>

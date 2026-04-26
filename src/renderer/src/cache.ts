@@ -19,3 +19,9 @@ export function setCache<T>(key: string, value: T): void {
 }
 
 export function clearCache(key: string): void { store.delete(key) }
+
+export function clearCacheByPrefix(prefix: string): void {
+  for (const key of store.keys()) {
+    if (key.startsWith(prefix)) store.delete(key)
+  }
+}
