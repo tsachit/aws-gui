@@ -28,6 +28,7 @@ export interface PipelineStage {
 export interface PipelineState {
   pipelineName: string
   stages: PipelineStage[]
+  executionCommits: Record<string, string>  // pipelineExecutionId → git commit SHA
 }
 
 export interface EcsInstance {
@@ -53,23 +54,42 @@ export function getPipelineState(pipelineName: string): PipelineState {
   )
 
   const data = JSON.parse(raw)
-  return {
-    pipelineName: data.pipelineName,
-    stages: (data.stageStates ?? []).map((s: Record<string, unknown>) => ({
+  const stages: PipelineStage[] = (data.stageStates ?? []).map((s: Record<string, unknown>) => ({
+    stageName: s.stageName as string,
+    inboundExecution: s.inboundExecution as PipelineStage['inboundExecution'],
+    latestExecution: s.latestExecution as PipelineStage['latestExecution'],
+    actionStates: ((s.actionStates ?? []) as Record<string, unknown>[]).map(a => ({
+      actionName: a.actionName as string,
+      status: (a.latestExecution as Record<string, unknown> | undefined)?.status as string ?? 'Unknown',
+      lastUpdatedBy: (a.latestExecution as Record<string, unknown> | undefined)?.lastUpdatedBy as string,
+      token: (a.latestExecution as Record<string, unknown> | undefined)?.token as string,
+      summary: (a.latestExecution as Record<string, unknown> | undefined)?.summary as string,
+      revisionId: (a.currentRevision as Record<string, unknown> | undefined)?.revisionId as string,
       stageName: s.stageName as string,
-      inboundExecution: s.inboundExecution as PipelineStage['inboundExecution'],
-      latestExecution: s.latestExecution as PipelineStage['latestExecution'],
-      actionStates: ((s.actionStates ?? []) as Record<string, unknown>[]).map(a => ({
-        actionName: a.actionName as string,
-        status: (a.latestExecution as Record<string, unknown> | undefined)?.status as string ?? 'Unknown',
-        lastUpdatedBy: (a.latestExecution as Record<string, unknown> | undefined)?.lastUpdatedBy as string,
-        token: (a.latestExecution as Record<string, unknown> | undefined)?.token as string,
-        summary: (a.latestExecution as Record<string, unknown> | undefined)?.summary as string,
-        revisionId: (a.currentRevision as Record<string, unknown> | undefined)?.revisionId as string,
-        stageName: s.stageName as string,
-      })),
     })),
+  }))
+
+  // Collect unique execution IDs across all stages and resolve their git commit SHA
+  const execIds = [...new Set(
+    stages.map(s => s.latestExecution?.pipelineExecutionId).filter(Boolean) as string[]
+  )]
+
+  const executionCommits: Record<string, string> = {}
+  for (const execId of execIds) {
+    try {
+      const execRaw = runCommandSync(
+        `aws codepipeline get-pipeline-execution --pipeline-name "${pipelineName}" --pipeline-execution-id "${execId}"`
+      )
+      const execData = JSON.parse(execRaw)
+      const revisions = execData.pipelineExecution?.artifactRevisions as Record<string, unknown>[] | undefined
+      const sha = revisions?.[0]?.revisionId as string | undefined
+      if (sha) executionCommits[execId] = sha.slice(0, 7)
+    } catch {
+      // execution may have expired — skip
+    }
   }
+
+  return { pipelineName: data.pipelineName, stages, executionCommits }
 }
 
 /**

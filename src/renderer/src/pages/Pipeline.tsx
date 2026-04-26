@@ -289,19 +289,10 @@ export function Pipeline() {
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                       {(() => {
-                        // Build executionId → git commit hash using the Source stage's summary
-                        // (revisionId from currentRevision is an AWS internal ID, not the git SHA)
-                        const execToCommit: Record<string, string> = {}
-                        const sourceStage = pipelineState.stages.find(s => s.stageName.toLowerCase() === 'source')
-                        if (sourceStage) {
-                          const execId = sourceStage.latestExecution?.pipelineExecutionId
-                          const commit = sourceCommit(pipelineState)
-                          if (execId && commit) execToCommit[execId] = commit
-                        }
                         return pipelineState.stages.map(stage => {
-                          // Resolve commit via this stage's executionId
+                          // Resolve commit via executionId → git SHA map built in main process
                           const execId = stage.latestExecution?.pipelineExecutionId
-                          const revision = execId ? execToCommit[execId] : undefined
+                          const revision = execId ? pipelineState.executionCommits[execId] : undefined
                           return (
                           <tr key={stage.stageName} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{stage.stageName}</td>

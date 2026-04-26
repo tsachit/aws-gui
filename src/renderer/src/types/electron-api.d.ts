@@ -62,6 +62,7 @@ export interface PipelineStage {
 export interface PipelineState {
   pipelineName: string
   stages: PipelineStage[]
+  executionCommits: Record<string, string>  // pipelineExecutionId → git commit SHA
 }
 
 // ─── Instances ────────────────────────────────────────────────────────────────
