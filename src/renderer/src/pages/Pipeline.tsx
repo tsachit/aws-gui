@@ -69,7 +69,7 @@ export function Pipeline() {
   const [stateError, setStateError] = useState<string | null>(null)
   const [approving, setApproving] = useState(false)
   const [approvalResult, setApprovalResult] = useState<string | null>(null)
-  const [approvalDone, setApprovalDone] = useState(false)
+  const [dismissedToken, setDismissedToken] = useState<string | null>(null)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [secondsAgo, setSecondsAgo] = useState(0)
 
@@ -102,7 +102,6 @@ export function Pipeline() {
     setStateLoading(true)
     setStateError(null)
     setApprovalResult(null)
-    setApprovalDone(false)
     try {
       const result = await window.electronAPI.getPipelineState(name)
       setCache(stateKey(name), result)
@@ -162,9 +161,12 @@ export function Pipeline() {
         token: pending.token,
         approved,
       })
-      setApprovalDone(true)
+      // Dismiss this specific token — panel stays hidden even if AWS briefly
+      // returns the same token on the next refresh while it finishes processing
+      setDismissedToken(pending.token)
       setApprovalResult(approved ? '✅ Approved.' : '❌ Rejected.')
-      setTimeout(() => { selectedName && loadState(selectedName, true); setApprovalDone(false); setApprovalResult(null) }, 2000)
+      // Keep polling; once token disappears from state, dismissedToken auto-clears below
+      loadState(selectedName!, true)
     } catch (err: unknown) {
       setApprovalResult(`Error: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
@@ -173,6 +175,14 @@ export function Pipeline() {
   }, [pipelineState, selectedName, loadState])
 
   const pendingApproval = pipelineState ? findPendingApproval(pipelineState) : null
+
+  // Clear dismissedToken once AWS confirms the token is gone
+  useEffect(() => {
+    if (dismissedToken && pendingApproval?.token !== dismissedToken) {
+      setDismissedToken(null)
+      setApprovalResult(null)
+    }
+  }, [pendingApproval, dismissedToken])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -321,13 +331,13 @@ export function Pipeline() {
                   </table>
                 </div>
 
-                {approvalDone && approvalResult && (
+                {dismissedToken && approvalResult && (
                   <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-5 py-3 text-sm font-mono text-gray-600 dark:text-gray-300">
                     {approvalResult} Refreshing…
                   </div>
                 )}
 
-                {pendingApproval && !approvalDone && (
+                {pendingApproval && pendingApproval.token !== dismissedToken && (
                   <div className="rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950 p-5">
                     <h3 className="font-semibold mb-1 text-yellow-800 dark:text-yellow-200">Manual Approval Required</h3>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
